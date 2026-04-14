@@ -37,39 +37,45 @@ def debug_augmentation(h5f):
     
 
 def extract_noise_segments(noise_path):
-    print(f"noise path = {noise_path}")
     with h5py.File(noise_path, "r") as f:
         
         grp = f["/data/sliced_segments"]
-        fs = int(f["/meta"].attrs["sample_rate"])
+        ds = f["/data/audio"]
         
+        fs = int(f["/meta"].attrs["sample_rate"])
         names = sorted(grp.keys())
         segments = [grp[n] for n in names]
+        amount_of_segments = len(segments)
         
-        for segment in segments:
-           end_time, start_time = segment.attrs["start_time_s"], segment.attrs["end_time_s"]
-           print(f"start time = {start_time} || end time = {end_time}")
-        return
-    return
+        noise_mat = np.empty(amount_of_segments, dtype=object)
+        
+        for (i,segment) in enumerate(segments):
+           start_time, end_time = segment.attrs["start_time_s"], segment.attrs["end_time_s"]
+           start_sample = int(start_time * fs)
+           end_sample   = int(end_time * fs)
+           noise_mat[i] = ds[start_sample:end_sample]
+
+    return noise_mat
     
 #hdf5_path = '0002_hungarian.h5'
 noise_segs = extract_noise_segments(r'X:\datasets\noise_db_rotem_wav-processed-h5\26_2\harley_noise_only_boom_windmachine.h5');
+print(f"noise_segs = {noise_segs.shape}")
 # open file
-#h5f = h5py.File(hdf5_path, 'r+')
+# h5f = h5py.File(hdf5_path, 'r+')
 
 # read file
-#word_audio, h5f = read_file_extract_audio(h5f)
+# word_audio, h5f = read_file_extract_audio(h5f)
 
 # augment and retuarn augmentation data:
-#word_audio, h5f, augmentation_data = add_rand_noise(word_audio, h5f)
+# word_audio, h5f, augmentation_data = add_rand_noise(word_audio, h5f)
 
-#print(f"\n\nword_audio = {word_audio.shape} || h5f = {h5f} || augmentation_data = {augmentation_data}\n")
+# print(f"\n\nword_audio = {word_audio.shape} || h5f = {h5f} || augmentation_data = {augmentation_data}\n")
 # write augmentation data to file
-#for aug_set in augmentation_data:
+# for aug_set in augmentation_data:
 #    h5f = write_aug_info(h5f, aug_set)
     
-#debug_augmentation(h5f)
+# debug_augmentation(h5f)
 # close file
-#h5f.close()
+# h5f.close()
 
 print(f"\n\nDONE!\n\n")
