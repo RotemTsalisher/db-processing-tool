@@ -48,6 +48,7 @@ def extract_noise_segments(noise_path):
         amount_of_segments = len(segments)
         
         noise_mat = np.empty(amount_of_segments, dtype=object)
+        #noise_mat = [None] * amount_of_segments
         
         for (i,segment) in enumerate(segments):
            start_time, end_time = segment.attrs["start_time_s"], segment.attrs["end_time_s"]
@@ -58,7 +59,7 @@ def extract_noise_segments(noise_path):
     return noise_mat
     
 #hdf5_path = '0002_hungarian.h5'
-noise_segs = extract_noise_segments(r'X:\datasets\noise_db_rotem_wav-processed-h5\26_2\harley_noise_only_boom_windmachine.h5');
+noise_segs = extract_noise_segments(r'X:\datasets\noise_db_rotem_wav-processed-h5\26_2\mic-boom_slow_low_breathing_no_speech.h5');
 print(f"noise_segs = {noise_segs.shape}")
 # open file
 # h5f = h5py.File(hdf5_path, 'r+')
