@@ -57,26 +57,77 @@ def extract_noise_segments(noise_path):
            noise_mat[i] = ds[start_sample:end_sample]
 
     return noise_mat
+
+##############################################################################
+##############################################################################
+def normalize_power_db(audio: np.ndarray, target_db: float, eps: float = 1e-12, method: str = "rms"):
+    log_string = f"normalize_power_db(): Hello World!"
+  
+    # by default will compute rms normalization
+    if(method == "rms"):
+        
+        log_string += f"\nrms normalization, target db = {target_db}\n"
+        power_linear = compute_power(audio)
+        
+    # unless passed with "peak" and will compute peak normalization scaling
+    elif(method == "peak"):
+        
+        log_string += f"\npeak normalization, target db = {target_db}\n"
+        power_linear = float(np.max(np.abs(audio)) + eps)
+        
+    # bad method arg will lead to error print and return the same audio
+    else:
+        
+        log_string += f"\nwrong method string! RETURN WITHOUT PROCESSING!, target db = {target_db}\n"
+        return audio, log_string
+
+    target_linear = 10.0 ** (target_db / 20)
+    scaler = target_linear / power_linear
     
-#hdf5_path = '0002_hungarian.h5'
-noise_segs = extract_noise_segments(r'X:\datasets\noise_db_rotem_wav-processed-h5\26_2\mic-boom_slow_low_breathing_no_speech.h5');
-print(f"noise_segs = {noise_segs.shape}")
-# open file
-# h5f = h5py.File(hdf5_path, 'r+')
+    scaled_audio = (scaler * audio).astype(np.float32)
+    return scaled_audio, log_string
 
-# read file
-# word_audio, h5f = read_file_extract_audio(h5f)
 
-# augment and retuarn augmentation data:
-# word_audio, h5f, augmentation_data = add_rand_noise(word_audio, h5f)
-
-# print(f"\n\nword_audio = {word_audio.shape} || h5f = {h5f} || augmentation_data = {augmentation_data}\n")
-# write augmentation data to file
-# for aug_set in augmentation_data:
-#    h5f = write_aug_info(h5f, aug_set)
+def compute_power(x_, eps: float = 1e-12):
     
-# debug_augmentation(h5f)
-# close file
-# h5f.close()
+    pwr = float(np.sqrt(np.mean(x_**2)) + eps)
+    return pwr
 
-print(f"\n\nDONE!\n\n")
+#def compute
+def target_snr_noise_blend(x_, n_, target_snr):
+    
+    speech_pwr_db, noise_pwr_db = 10*np.log10(compute_power(x_)), 10*np.log10(compute_power(n_))
+    snr_max = speech_pwr_db - noise_pwr_db
+    
+    
+    return snr_max
+    
+
+def test_norm_methods(in_path: str, db: list[float], methods = ["peak", "rms", "broken"]):
+    
+    x, fs = sf.read(in_path)
+    for method_ in methods:
+        for db_ in db:
+            out_path = rf"tests\norm\tests-{method_}-processed-test-speech-neg-{db_}.flac"
+            y, log_string = normalize_power_db(x, db_, method = method_)
+            sf.write(out_path, y, fs)
+            log_string += f" saved audio || scaled {method_} to {db_} db || path = {out_path}\n\n"
+            print(log_string)
+
+    return
+    
+# test_norm_methods("test-speech.flac", [-3.0, -6.0, -12.0])
+
+def test_power_computations(in_path_speech: str, in_path_noise: str):
+    
+    x, fs = sf.read(in_path_speech)
+    x_ = normalize_power_db(x, -18)[0]
+    
+    noise_mat = extract_noise_segments(in_path_noise)
+    
+    for i in range(len(noise_mat)):
+        snr_max = target_snr_noise_blend(x_, noise_mat[i], 0)
+    return 
+    
+test_power_computations("test-speech.flac", r"./26_2/corded_extra_test.h5")
+print(f"\nDONE!")
